@@ -41,6 +41,36 @@ chmod +x /usr/local/bin/dt
 Needs `dtach`, plus `nc` and `lsof` (both ship with macOS). Shell-agnostic — it runs as
 an executable, not a shell function, so it works regardless of which shell you use.
 
+## Releasing
+
+Releases are fully automated. Tag and push:
+
+```sh
+git tag vX.Y.Z
+git push origin vX.Y.Z
+```
+
+The `release` workflow then:
+
+1. cuts a GitHub release with generated notes, and
+2. bumps the formula in [`davidblurton/homebrew-tap`](https://github.com/davidblurton/homebrew-tap)
+   — computing the tarball `sha256` and committing the new `url`/`sha256` to `Formula/dt.rb`.
+
+After that, `brew install davidblurton/tap/dt` serves the new version. There is no manual
+hashing step; never edit the tap formula's `sha256` by hand.
+
+Keep `bin/dt`'s `VERSION` in sync with the tag you push. The `Formula/dt.rb` in *this* repo
+is only a reference template — the tap repo holds the live formula brew installs.
+
+### One-time setup
+
+The tap bump needs a repo secret `TAP_GITHUB_TOKEN`: a fine-grained PAT scoped to the
+`homebrew-tap` repo with **Contents: read and write**.
+
+```sh
+gh secret set TAP_GITHUB_TOKEN --repo davidblurton/dt
+```
+
 ## License
 
 MIT
