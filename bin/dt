@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# dt — manage dtach sessions by name.
+set -u
+VERSION=0.1.0
+dir=${DT_DIR:-$HOME/.dtach}
+mkdir -p "$dir"
+
+usage() {
+  cat <<'EOF'
+dt — manage dtach sessions by name
+
+usage:
+  dt                 list sessions (dead = stale socket)
+  dt <name>          attach to <name>, creating it if absent
+  dt -k <name>...    kill session(s) and remove the socket
+  dt -h, --help      show this help
+  dt -v, --version   show version
+
+detach from a session with Ctrl-\
+sockets live in ~/.dtach (override with $DT_DIR)
+EOF
+}
+
+# live if we can connect to the unix socket (stale file -> connection refused)
+alive() { nc -U "$1" </dev/null >/dev/null 2>&1; }
+
+list() {
+  shopt -s nullglob
+  local socks=("$dir"/*.dtach) s n
+  if ((${#socks[@]} == 0)); then echo "no sessions"; return 0; fi
+  for s in "${socks[@]}"; do
+    n=$(basename "$s" .dtach)
+    if alive "$s"; then echo "$n"; else echo "$n (dead)"; fi
+  done
+}
+
+kill_sessions() {
+  (($#)) || { echo "usage: dt -k <name>..." >&2; return 1; }
+  local n s pid rc=0
+  for n in "$@"; do
+    s=$dir/$n.dtach
+    if [ -e "$s" ]; then
+      pid=$(lsof -t -- "$s" 2>/dev/null)
+      [ -n "$pid" ] && kill $pid
+      rm -f "$s"
+      echo "killed $n"
+    else
+      echo "no session: $n" >&2
+      rc=1
+    fi
+  done
+  return $rc
+}
+
+case ${1:-} in
+  -h|--help)    usage ;;
+  -v|--version) echo "dt $VERSION" ;;
+  -k|--kill)    shift; kill_sessions "$@" ;;
+  "")           list ;;
+  -*)           echo "dt: unknown option: $1" >&2; usage >&2; exit 1 ;;
+  *)            exec dtach -A "$dir/$1.dtach" -z "$SHELL" ;;
+esac
