@@ -1,0 +1,32 @@
+name: release
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create GitHub release
+        run: gh release create "$GITHUB_REF_NAME" --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  bump-tap:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Bump formula in homebrew-tap
+        uses: mislav/bump-homebrew-formula-action@v3
+        with:
+          formula-name: dt
+          formula-path: Formula/dt.rb
+          homebrew-tap: davidblurton/homebrew-tap
+        env:
+          # Fine-grained PAT with contents:write on davidblurton/homebrew-tap.
+          # Add it as a repo secret named TAP_GITHUB_TOKEN.
+          COMMITTER_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}

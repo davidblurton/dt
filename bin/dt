@@ -41,6 +41,7 @@ kill_sessions() {
     s=$dir/$n.dtach
     if [ -e "$s" ]; then
       pid=$(lsof -t -- "$s" 2>/dev/null)
+      # shellcheck disable=SC2086  # intentional split: may be multiple pids
       [ -n "$pid" ] && kill $pid
       rm -f "$s"
       echo "killed $n"
