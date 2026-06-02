@@ -14,8 +14,10 @@ dt -v           version
 The positional argument is always a session name, so names never clash with
 subcommands — `dt ls` attaches to a session called `ls`. Detach with `Ctrl-\`.
 
-Sockets live in `~/.dtach` (override with `$DT_DIR`). Liveness is a real unix-socket
-`connect()` via `nc -U`, so a stale socket left by a crashed master shows as `(dead)`.
+Sockets live in `~/.dtach` (override with `$DT_DIR`). Liveness checks whether a process
+still holds the socket (via `lsof`), so a stale socket left by a crashed master shows as
+`(dead)`. (Connecting to probe it would hang: a live dtach socket waits for an attach
+client and never closes.)
 
 ## Install (Homebrew)
 
@@ -38,7 +40,7 @@ curl -fsSL https://raw.githubusercontent.com/davidblurton/dt/main/bin/dt -o /usr
 chmod +x /usr/local/bin/dt
 ```
 
-Needs `dtach`, plus `nc` and `lsof` (both ship with macOS). Shell-agnostic — it runs as
+Needs `dtach`, plus `lsof` (ships with macOS). Shell-agnostic — it runs as
 an executable, not a shell function, so it works regardless of which shell you use.
 
 ## Releasing

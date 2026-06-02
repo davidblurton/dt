@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # dt — manage dtach sessions by name.
 set -u
-VERSION=0.1.0
+VERSION=0.1.1
 dir=${DT_DIR:-$HOME/.dtach}
 mkdir -p "$dir"
 
@@ -21,8 +21,10 @@ sockets live in ~/.dtach (override with $DT_DIR)
 EOF
 }
 
-# live if we can connect to the unix socket (stale file -> connection refused)
-alive() { nc -U "$1" </dev/null >/dev/null 2>&1; }
+# live if a process holds the socket (stale file -> no holder).
+# don't connect: a live dtach socket accepts the connection and never closes
+# it (it waits for an attach client), so nc -U would hang the listing.
+alive() { [ -n "$(lsof -t -- "$1" 2>/dev/null)" ]; }
 
 list() {
   shopt -s nullglob
